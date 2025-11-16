@@ -99,6 +99,7 @@ Comando Executado:
 Bash
 
 medusa -h 192.168.56.101 -U users.txt -P pass.txt -M ftp -t 6
+
 -h 192.168.56.101: Especifica o alvo (host).
 
 -U users.txt: Fornece o arquivo com a lista de usuários.
