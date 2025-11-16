@@ -12,7 +12,7 @@ A segunda finalidade é o ISOLAMENTO e SEGURANÇA: como o nosso foco são os tes
 
 PASSO A PASSO: após a instalação do virtual box e posteriormente do Kali Linux e Metasploitable 2, clique em uma das duas VMs instaladas, clique em configurações, depois va na aba rede e escolha a opção placa de rede exclusiva de hospedeiro  *host only*, em seguida configure a outra máquina da mesma forma. Pronto, seu ambiente se encontra pronto para a simulaçaão do ataque de força bruta.
 
-# Simulando ataque de Brute Force via FTP usando o Kali Linux e Metasploitable 2
+# 1. Simulando ataque de Brute Force via FTP usando o Kali Linux e Metasploitable 2
 
 O primeiro passo consiste em verificar qual é o endereço IP da máquina Metasploitable 2. Para isso deveremos abrir o Metasploitable 2 e usar os comandos ifconfig ou ip a, e em seguida todas as informações necessárias no que diz respeito ao IP da máquina será listada logo abaixo, conforme a imagem a seguir:
 
@@ -127,3 +127,69 @@ Significado: O ataque de força bruta foi bem-sucedido. O Medusa identificou sen
 
 
 <img width="1920" height="923" alt="VirtualBox_Kali_05_11_2025_07_06_08criandoataquebruteforce" src="https://github.com/user-attachments/assets/f1ec6ed1-8b6a-4719-92ef-cbbcd58b52f1" />
+
+
+# 2. Simulando ataque de Brute Force usando o Kali e o Medusa via formulário web (DVWA).
+
+
+💻 1. Preparação e Análise da Requisição (Imagem 1)
+A primeira imagem () mostra a fase inicial de reconhecimento e análise do formulário de login do DVWA.
+
+Alvo: O alvo é a aplicação web de teste de vulnerabilidades DVWA, acessada no endereço IP local 192.168.56.101 na página login.php.
+
+Tentativa Manual e Análise: É feita uma tentativa de login manual (username: "geo", password: "123456") que falha ("Login failed").
+
+Captura de Dados: O painel de Ferramentas do Desenvolvedor do navegador (aba Network / Rede) é crucial. Ele mostra a requisição POST enviada para login.php com o status 302 (Redirecionamento, pois a tentativa de login falhou).
+
+Identificação do Payload: No painel Request (Requisição) à direita, o Form Data (Dados do Formulário) revela exatamente como o servidor espera receber as credenciais: username=geo, password=123456, e o botão Login=Login. Essa estrutura é essencial para configurar a ferramenta de ataque.
+
+
+<img width="1920" height="923" alt="VirtualBox_Kali_05_11_2025_19_11_20testantoataqueloginesenhaSOweb" src="https://github.com/user-attachments/assets/d6aba9ce-0d41-47e8-81e8-90df70f92720" />
+
+
+2. Execução do Ataque de Força Bruta (Imagem 2)
+A segunda imagem () mostra o uso da ferramenta Medusa para executar o ataque de força bruta contra o formulário de login, aproveitando a informação coletada na etapa anterior.
+
+Ferramenta: O ataque foi realizado com o Medusa, um scanner de força bruta rápido e modular.
+
+Comando: O comando utilizado direciona o Medusa para:
+
+-h 192.168.56.101: O host alvo.
+
+-u users.txt: Um arquivo contendo uma lista de nomes de usuário para tentar com o comando echo -e "user\nmsfadmin\nadmin\nroot" > users.txt
+
+-P pass.txt: Um arquivo contendo uma lista de senhas a serem testadas para cada usuário com o comando echo -e "123456\npassword\qwerty\nmsfadmin" > pass.txt
+
+-M ftp
+
+-M http: Especifica o módulo de protocolo HTTP.
+
+-M PAGE '/dvwa/login.php: O caminho para a página de login.
+
+-M 'FORM: username=^USER^&password=^PASS^&Login=Login": O payload exato da requisição POST (o formato FORM foi visto na Imagem 1).
+
+-M 'FAIL=Login failed": Especifica uma string de resposta do servidor que indica uma falha de login, permitindo ao Medusa identificar quando essa string está ausente (o que significa sucesso).
+
+-t 6 (de Threads) define o número de threads (ou conexões) paralelas que o Medusa deve usar para tentar as combinações de login. Um valor de 6 significa que 6 tentativas de login serão realizadas simultaneamente, acelerando o processo.
+
+
+Resultados de Sucesso (SUCCESS): O Medusa testa as combinações e relata vários logins bem-sucedidos (ACCOUNT FOUND com [SUCCESS]), incluindo:
+
+Usuário admin com a senha password.
+
+Usuário admin com a senha 123456.
+
+Usuário msfadmin com a senha 123456.
+
+Usuário user com a senha 123456.
+
+...e outras combinações.
+
+
+<img width="1920" height="923" alt="VirtualBox_Kali_06_11_2025_18_49_06ataqueformularioweb" src="https://github.com/user-attachments/assets/c4cce559-6e23-4c85-95d7-bfaa4f5287f2" />
+
+
+
+<img width="1920" height="923" alt="VirtualBox_Kali_06_11_2025_19_03_51segundalistadesucessosataqueweb" src="https://github.com/user-attachments/assets/809c7ca2-6461-4fd0-82c3-2ba7d613ad45" />
+
+
