@@ -193,3 +193,16 @@ Usuário user com a senha 123456.
 <img width="1920" height="923" alt="VirtualBox_Kali_06_11_2025_19_03_51segundalistadesucessosataqueweb" src="https://github.com/user-attachments/assets/809c7ca2-6461-4fd0-82c3-2ba7d613ad45" />
 
 
+✅ 3. Confirmação do Acesso (Imagem 3)
+A terceira imagem () valida o sucesso do ataque usando uma das credenciais encontradas.
+
+Acesso Confirmado: O atacante usa o par admin / password descoberto pelo Medusa e obtém acesso ao dashboard principal do DVWA, index.php.
+
+URL: A URL muda de login.php para index.php, confirmando que a sessão foi estabelecida.
+
+Prova da Exploração: O painel Ferramentas do Desenvolvedor (aba Headers / Cabeçalhos) agora mostra os dados de login enviados (username: "admin", password: "password") que resultaram em um acesso bem-sucedido.
+
+Conclusão: O ambiente de teste DVWA permitiu o ataque de força bruta, validando que, com as configurações de segurança padrão (ou de baixa segurança), um formulário de login pode ser facilmente comprometido por meio de listas de senhas e usernames comuns.
+
+
+<img width="1920" height="923" alt="VirtualBox_Kali_06_11_2025_19_04_41conseguindologarweb" src="https://github.com/user-attachments/assets/869ae031-dde1-453e-ad75-b4704c31ae30" />
