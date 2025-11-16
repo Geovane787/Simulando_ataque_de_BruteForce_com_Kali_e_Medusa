@@ -19,7 +19,8 @@ O primeiro passo consiste em verificar qual é o endereço IP da máquina Metasp
 <img width="720" height="400" alt="VirtualBox_Ubuntu_04_11_2025_20_37_35ifconfig" src="https://github.com/user-attachments/assets/94f9e757-e530-4991-88a1-0b9f876a203c" />
 
 
-1. 🔍 Primeiro Ping na Rede Metasploitable 2
+1. 🔍 Primeiro Ping na Rede Metasploitable 2.
+   
 A primeira parte da primeira imagem mostra o resultado do comando ping na máquina Kali Linux para o endereço IP 192.168.56.101, que é o endereço da máquina Metasploitable 2.
 
 Comando Executado:
@@ -50,7 +51,7 @@ Comando Executado:
 
 Bash
 
-nmap -sV -p 21,22,23,80,445,139 192.168.56.101
+nmap -sV -p 21,22,80,445,139 192.168.56.101
 A opção -sV tenta determinar a versão do serviço em execução nas portas abertas.
 
 A opção -p especifica as portas a serem varridas. A porta 21/tcp é a porta padrão para o protocolo FTP (File Transfer Protocol).
@@ -70,6 +71,7 @@ Isso confirma que o serviço FTP está ativo e vulnerável (vsftpd 2.3.4 é conh
 
 
 3. 💥 Ataque de Força Bruta ao FTP com Medusa
+   
 A segunda imagem documenta o processo e o resultado do ataque de força bruta contra o serviço FTP na porta 21/tcp do Metasploitable 2, usando a ferramenta Medusa a partir do Kali Linux.
 
 A. Preparação do Ataque (Criação de Listas)
@@ -79,14 +81,14 @@ Criação de Usuários:
 
 Bash
 
-echo "user1\nuser2\nadmin\nuser\nroot" > users.txt
+echo -e "user\nmsfadmin\nadmin\nroot" > users.txt
 (Este comando cria uma lista de usuários para testar.)
 
 Criação de Senhas:
 
 Bash
 
-echo "password\nqwerty\nmsfadmin" > pass.txt
+echo -e "123456\npassword\nqwerty\nmsfadmin" > pass.txt
 (Este comando cria uma lista de senhas para testar.)
 
 B. Execução do Ataque com Medusa
@@ -96,7 +98,7 @@ Comando Executado:
 
 Bash
 
-medusa -h 192.168.56.101 -U users.txt -P pass.txt -M ftp
+medusa -h 192.168.56.101 -U users.txt -P pass.txt -M ftp -t 6
 -h 192.168.56.101: Especifica o alvo (host).
 
 -U users.txt: Fornece o arquivo com a lista de usuários.
@@ -104,6 +106,8 @@ medusa -h 192.168.56.101 -U users.txt -P pass.txt -M ftp
 -P pass.txt: Fornece o arquivo com a lista de senhas.
 
 -M ftp: Indica o módulo a ser usado, neste caso, o File Transfer Protocol (FTP).
+
+-t (de Threads) define o número de threads (ou conexões) paralelas que o Medusa deve usar para tentar as combinações de login. Um valor de 6 significa que 6 tentativas de login serão realizadas simultaneamente, acelerando o processo.
 
 C. Resultados e Sucesso do Ataque
 O Medusa executa a combinação de credenciais até encontrar um par válido. Os resultados mostram várias tentativas (ACCOUNT CHECK) até que o Medusa encontra credenciais bem-sucedidas.
@@ -114,7 +118,7 @@ Usuário 1: msfadmin / msfadmin
 
 Usuário 2: user / user
 
-Usuário 3: root / toor (e outras como password ou 123456)
+Usuário 3: root / root (e outras como password ou 123456)
 
 Confirmação (Login Manual): O atacante, em seguida, usa o comando ftp 192.168.56.101 e insere o par de credenciais msfadmin/msfadmin, que foi encontrado pelo Medusa. O terminal exibe a mensagem: "230 Login successful."
 
