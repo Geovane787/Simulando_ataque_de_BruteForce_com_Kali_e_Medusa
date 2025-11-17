@@ -206,3 +206,127 @@ Conclusão: O ambiente de teste DVWA permitiu o ataque de força bruta, validand
 
 
 <img width="1920" height="923" alt="VirtualBox_Kali_06_11_2025_19_04_41conseguindologarweb" src="https://github.com/user-attachments/assets/869ae031-dde1-453e-ad75-b4704c31ae30" />
+
+
+# Simulando ataque em cadeia, enumeração SMB + password spraying #
+
+
+🛡️ Análise de Enumeração SMB para PentestO primeiro código que você executou é um comando de enumeração usando a ferramenta enum4linux contra o endereço IP 192.168.56.101, com o objetivo de coletar informações sobre o serviço SMB (Server Message Block). O SMB é um protocolo de rede usado para compartilhar arquivos, impressoras e comunicações entre processos.
+
+💻 O Comando e Seu Significado: O comando que você executou é: enum4linux -a 192.168.56.101 | tee enum_output.txt
+
+enum4linux: É uma ferramenta de enumeração para sistemas Windows/Samba no Linux, geralmente usada em pentesting para extrair informações sobre usuários, grupos, compartilhamentos, e políticas de segurança de um alvo que executa o SMB.
+
+-a: É o argumento para realizar uma enumeração "all" (completa), que tenta executar todas as verificações disponíveis na ferramenta, incluindo NetBIOS, usuários, grupos, compartilhamentos, SID (Security Identifier), etc.
+
+192.168.56.101: É o endereço IP do alvo da enumeração (a máquina servidora SMB).
+| tee enum_output.txt: Este é um mecanismo de redirecionamento do shell:
+
+| (Pipe): Redireciona a saída padrão do comando enum4linux (o que aparece no terminal) para o próximo comando.
+
+tee: Este comando faz duas coisas simultaneamente:Exibe a saída na tela (no terminal). Salva a mesma saída no arquivo enum_output.txt para documentação. Objetivo: Obter o máximo de informações possível sobre o serviço SMB no IP 192.168.56.101 e registrar todo o processo e resultado no arquivo enum_output.txt.
+
+🎯 Retorno da Lista de Possíveis Alvos SMB: O resultado da execução do enum4linux (visível nas duas imagens, especialmente a segunda, que mostra o conteúdo do enum_output.txt) fornece uma lista robusta de potenciais alvos de ataque, essenciais para a documentação de pentest. 
+
+**1. Informações de Identificação Geral (Imagem 1):**
+
+   **Workgroup/Domain Name:**
+   
+   WORKGROUP. Isso indica que o alvo faz parte de um grupo de trabalho, não de um domínio Active Directory, embora o enum4linux tente buscar SIDs de domínio.
+   
+   **Netstat Information (NBTSTAT):**
+   
+ METASPLOITABLE <00> - B <ACTIVE> Workstation Service: Confirma que o alvo é provavelmente uma máquina Metasploitable (frequentemente usada para testes), com o serviço de estação de trabalho ativo.
+ 
+ METASPLOITABLE <20> - B <ACTIVE> File Server Service: Confirma a existência de um serviço de Servidor de Arquivos (File Server) ativo (via porta TCP 445/139), um vetor de ataque direto via SMB.
+ 
+ WORKGROUP <1D> - B <ACTIVE> Master Browser: Indica que o host está atuando como o "navegador mestre" na rede, responsável por manter a lista de computadores disponíveis.
+ 
+ Session Check: [+] Server 192.168.56.101 allows sessions using username "", password "". Essa é uma descoberta crítica! Indica que é possível acessar o servidor SMB anonimamente (sessão nula) sem credenciais, o  que é uma falha de configuração grave e que permite a enumeração de recursos como usuários, grupos e compartilhamentos (que é o que o enum4linux faz).
+
+**3. Lista de Usuários e Grupos Enumerados (Imagem 2):**
+
+   A parte mais importante para a lista de alvos são as contas enumeradas. A listagem (exibida na segunda imagem) contém vários SIDs (Security Identifiers), nomes de contas (usuários e grupos) e seus tipos.
+
+
+   <img width="1920" height="923" alt="VirtualBox_Kali_16_11_2025_21_11_16listandotecnicassmb" src="https://github.com/user-attachments/assets/3f377740-dce1-4f64-94ff-aa0160ed1d8e" />
+
+
+   <img width="1920" height="923" alt="VirtualBox_Kali_16_11_2025_21_12_04acessandoarquivoenum4" src="https://github.com/user-attachments/assets/b0f95b1f-0e5f-4af0-b7db-8aae1ae6c7ff" />
+
+   
+**O código exibido na imagem é uma sequência de comandos executados em um terminal Linux (Kali Linux), provavelmente para realizar um ataque de força bruta contra um serviço SMB (Server Message Block) em uma rede.**
+
+💻 **Comandos e Explicação:**
+
+Os comandos mostram o uso da ferramenta Medusa para tentar adivinhar nomes de usuário e senhas válidas em um serviço SMB.
+
+**1. Preparação dos Arquivos**
+
+echo -e "user\nmsfadmin\nservice" > smb.users.txt
+
+Função: Cria um arquivo chamado smb.users.txt que contém uma lista de nomes de usuário a serem testados.
+
+Conteúdo: A lista contém user e nmsfadmin e nservice. O uso de -e e \n garante que cada nome de usuário esteja em uma nova linha.
+
+echo -e "P@$$w0rd\nwelcome123\nmsfadmin" > smb.pass.txt
+
+Função: Cria um arquivo chamado smb.pass.txt que contém uma lista de senhas a serem testadas.
+
+Conteúdo: A lista contém P@$$w0rd, welcome123 e msfadmin.
+
+2. Ataque de Força Bruta com Medusa
+medusa -H 192.168.56.101 -U smb.users.txt -P smb.pass.txt -e nsrht -f -Z -T 50
+
+Ferramenta: Medusa, um brute-force password cracker (quebrador de senhas por força bruta) modular, rápido e agressivo.
+
+Opções:
+
+-H 192.168.56.101: Define o host alvo (endereço IP).
+
+-U smb.users.txt: Especifica o arquivo de nomes de usuário a serem testados.
+
+-P smb.pass.txt: Especifica o arquivo de senhas a serem testadas.
+
+-e nsrht: Define opções de verificação adicionais (por exemplo, n para no password, s para same username as password, etc.).
+
+-f: Interrompe (para) a verificação do host alvo após encontrar uma combinação válida (sucesso).
+
+-Z: Define o módulo de ataque. Neste caso, está implícito que é para o serviço SMB (o protocolo é deduzido pela saída, mas o módulo específico seria -M smb).
+
+-T 50: Define o número de threads (conexões paralelas) a serem usadas (aumenta a velocidade do ataque).
+
+3. Resultados do Ataque (Log do Medusa)
+O output do Medusa mostra os resultados das tentativas:
+
+Falhas:
+
+ACCOUNT CHECK: [SMBNT] Host: 192.168.56.101 (1 of 1, 0 complete) user: user (1 of 3, 0 complete) Password: P@$$w0rd (1 of 3 complete)
+
+...e outras tentativas que resultaram em FAILURE (falha) ou ACCOUNT CHECK (verificação de conta, indicando falha na senha).
+
+Sucesso:
+
+ACCOUNT CHECK: [SMBNT] Host: 192.168.56.101 (1 of 1, 0 complete) user: msfadmin (2 of 3, 1 complete) Password: msfadmin (3 of 3 complete)
+
+Esta linha indica que a combinação de usuário: msfadmin e senha: msfadmin foi válida (SUCCESS - ACCESS ALLOWED).
+
+🔑 Pós-Ataque e Verificação
+Após o sucesso, a imagem mostra duas tentativas de login usando a ferramenta smbclient, que é o utilitário de cliente SMB no Linux, usado para acessar compartilhamentos de rede:
+
+smbclient //192.168.56.101/ -U msfadmin
+
+Tentativa: Conectar-se ao host sem especificar um compartilhamento (/), solicitando o nome de usuário msfadmin.
+
+Resultado: session setup failed: NT_STATUS_LOGON_FAILURE. O login falhou, provavelmente porque a senha não foi fornecida corretamente na linha de comando ou por algum erro de sintaxe/ambiente.
+
+smbclient //192.168.56.101/msfadmin -U WORKGROUP/msfadmin
+
+Tentativa: Conectar-se a um compartilhamento chamado msfadmin no host, usando o usuário msfadmin e especificando o WORKGROUP (WORKGROUP/msfadmin).
+
+Resultado: Login bem-sucedido! A senha (implícita pela tentativa anterior de sucesso do Medusa) foi aceita.
+
+A saída final lista os recursos compartilhados (shares) disponíveis, como print$, smbtest, IPC$, ADMIN$, e o compartilhamento msfadmin.
+
+📝 Conclusão para Documentação
+Esta sequência demonstra o processo de teste de penetração ou hacking ético para identificar credenciais fracas e enumerar recursos compartilhados em um servidor SMB. O sucesso é alcançado através de um ataque de força bruta usando o Medusa, que descobre a credencial msfadmin:msfadmin, e a subsequente verificação de acesso usando o smbclient.
