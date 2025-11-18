@@ -265,18 +265,19 @@ Os comandos mostram o uso da ferramenta Medusa para tentar adivinhar nomes de us
 
 echo -e "user\nmsfadmin\nservice" > smb.users.txt
 
-Função: Cria um arquivo chamado smb.users.txt que contém uma lista de nomes de usuário a serem testados.
+Função: Cria um arquivo chamado (smb.users.txt) que contém uma lista de nomes de usuário a serem testados.
 
-Conteúdo: A lista contém user e nmsfadmin e nservice. O uso de -e e \n garante que cada nome de usuário esteja em uma nova linha.
+Conteúdo: A lista contém user, nmsfadmin e nservice. O uso de -e e \n garante que cada nome de usuário esteja em uma nova linha.
 
-echo -e "P@$$w0rd\nwelcome123\nmsfadmin" > smb.pass.txt
+echo -e "n123456\nwelcome123\nmsfadmin" > senhas_spray.txt
 
-Função: Cria um arquivo chamado smb.pass.txt que contém uma lista de senhas a serem testadas.
+Função: Cria um arquivo chamado (senhas_spray.txt) que contém uma lista de senhas a serem testadas.
 
-Conteúdo: A lista contém P@$$w0rd, welcome123 e msfadmin.
+Conteúdo: A lista contém n123456, nwelcome123 e msfadmin.
 
-2. Ataque de Força Bruta com Medusa
-medusa -H 192.168.56.101 -U smb.users.txt -P smb.pass.txt -e nsrht -f -Z -T 50
+**2. Ataque de Força Bruta com Medusa**
+
+medusa -h 192.168.56.101 -U smb.users.txt -P smb_spray.txt -M smbnt -t 2 -T 50
 
 Ferramenta: Medusa, um brute-force password cracker (quebrador de senhas por força bruta) modular, rápido e agressivo.
 
@@ -286,17 +287,16 @@ Opções:
 
 -U smb.users.txt: Especifica o arquivo de nomes de usuário a serem testados.
 
--P smb.pass.txt: Especifica o arquivo de senhas a serem testadas.
+-P senhas_spray.txt: Especifica o arquivo de senhas a serem testadas.
 
--e nsrht: Define opções de verificação adicionais (por exemplo, n para no password, s para same username as password, etc.).
+-t 2: Tenta 2 nomes de usuário antes de reiniciar a conexão (útil para evitar bloqueios de firewall).
 
--f: Interrompe (para) a verificação do host alvo após encontrar uma combinação válida (sucesso).
-
--Z: Define o módulo de ataque. Neste caso, está implícito que é para o serviço SMB (o protocolo é deduzido pela saída, mas o módulo específico seria -M smb).
+-M smbnt: Especifica o ataque contra o protocolo SMB (versões NT/2000/XP/Vista/7/8/10), usado para compartilhamento de arquivos e impressoras no Windows.
 
 -T 50: Define o número de threads (conexões paralelas) a serem usadas (aumenta a velocidade do ataque).
 
-3. Resultados do Ataque (Log do Medusa)
+**3. Resultados do Ataque (Log do Medusa)**
+
 O output do Medusa mostra os resultados das tentativas:
 
 Falhas:
@@ -307,20 +307,21 @@ ACCOUNT CHECK: [SMBNT] Host: 192.168.56.101 (1 of 1, 0 complete) user: user (1 o
 
 Sucesso:
 
-ACCOUNT CHECK: [SMBNT] Host: 192.168.56.101 (1 of 1, 0 complete) user: msfadmin (2 of 3, 1 complete) Password: msfadmin (3 of 3 complete)
+ACCOUNT FOUND: [SMBNT] Host: 192.168.56.101 (1 of 1, 0 complete) user: msfadmin (2 of 3, 1 complete) Password: msfadmin (3 of 3 complete)
 
 Esta linha indica que a combinação de usuário: msfadmin e senha: msfadmin foi válida (SUCCESS - ACCESS ALLOWED).
 
-🔑 Pós-Ataque e Verificação
-Após o sucesso, a imagem mostra duas tentativas de login usando a ferramenta smbclient, que é o utilitário de cliente SMB no Linux, usado para acessar compartilhamentos de rede:
+**🔑 Pós-Ataque e Verificação**
 
-smbclient //192.168.56.101/ -U msfadmin
+**Após o sucesso, a imagem mostra duas tentativas de login usando a ferramenta smbclient, que é o utilitário de cliente SMB no Linux, usado para acessar compartilhamentos de rede:**
+
+**smbclient //192.168.56.101/ -U msfadmin**
 
 Tentativa: Conectar-se ao host sem especificar um compartilhamento (/), solicitando o nome de usuário msfadmin.
 
 Resultado: session setup failed: NT_STATUS_LOGON_FAILURE. O login falhou, provavelmente porque a senha não foi fornecida corretamente na linha de comando ou por algum erro de sintaxe/ambiente.
 
-smbclient //192.168.56.101/msfadmin -U WORKGROUP/msfadmin
+**smbclient //192.168.56.101/msfadmin -U WORKGROUP/msfadmin**
 
 Tentativa: Conectar-se a um compartilhamento chamado msfadmin no host, usando o usuário msfadmin e especificando o WORKGROUP (WORKGROUP/msfadmin).
 
@@ -328,5 +329,14 @@ Resultado: Login bem-sucedido! A senha (implícita pela tentativa anterior de su
 
 A saída final lista os recursos compartilhados (shares) disponíveis, como print$, smbtest, IPC$, ADMIN$, e o compartilhamento msfadmin.
 
-📝 Conclusão para Documentação
+**📝 Conclusão para Documentação**
+
 Esta sequência demonstra o processo de teste de penetração ou hacking ético para identificar credenciais fracas e enumerar recursos compartilhados em um servidor SMB. O sucesso é alcançado através de um ataque de força bruta usando o Medusa, que descobre a credencial msfadmin:msfadmin, e a subsequente verificação de acesso usando o smbclient.
+
+
+<img width="1920" height="923" alt="VirtualBox_Kali_17_11_2025_07_08_41sucessologinsmb" src="https://github.com/user-attachments/assets/50e3e5cb-506d-41c1-9e97-5824125696f7" />
+
+
+
+Bom, finalizamos aqui alguns testes que fiz no curso de Cybersegurança da Dio.me e santander, com o auxilio da professora Isadora Ferrão, no qual reproduzi o que foi ensinado na aula. E conforme foi ensinado, todos os testes deram certo, o que foi bom porque confirma o acerto nas aulas, nas ferramentas e nos aprendizados em geral. Fico disponível para sugestões, e juntos podemos tornar o mundo cibernético mais ético.
+
